@@ -1,0 +1,161 @@
+// Author: Austin Meyer
+
+
+forward animation player_animation(circle player);
+forward animation enemy_animation(circle eny);
+
+
+int window_height = 800;
+int window_width = 800;
+
+int attack_adder = 2;
+int attack_move = 0;
+
+int mouse_x;
+int mouse_y;
+
+
+// Player Movement variables
+double distance;
+int next_position_y;
+int next_position_x;
+int degree;
+int x_squared;
+int y_squared;
+int move_y;
+int move_x;
+int attack_dist_x;
+int attack_dist_y;
+
+
+// Player Stats
+double stamina = 100;
+
+
+// Gameobjects
+circle enemy(x = 100, y = 100, radius = 10, animation_block = enemy_animation);
+circle player(x = 400, y = 400, radius = 10, animation_block = player_animation);
+
+
+// Game text information
+textbox stamina_text(x = 10  , y = 780, text = "Stamina: " + stamina, size = 0.15);
+
+
+initialization
+{
+    stamina = 100;
+}
+
+
+animation player_animation(circle player)
+{
+    if(attack_move)
+    {
+        if(abs(attack_dist_x - player.x) >= 10)
+        {
+            player.x += move_x;
+        }
+        else
+        {
+            attack_move++;
+        }
+    }
+    else if(abs(next_position_x - player.x) >= 10)
+    {
+        player.x += move_x;
+    }
+
+    if(attack_move)
+    {
+        if(abs(attack_dist_y - player.y) >= 10)
+        {
+            player.y += move_y;
+        }
+        else
+        {
+            attack_move++;
+        }
+    }
+    else if(abs(next_position_y - player.y) >= 10)
+    {
+        player.y += move_y;
+    }
+
+    if(attack_move == 3)
+    {
+        attack_move = 0;
+
+        next_position_x = player.x;
+        next_position_y = player.y;
+    }
+    else
+    {
+        if(stamina != 100)
+        {
+            stamina += 0.1;
+        }
+    }
+
+    stamina_text.text = "Stamina: " + floor(stamina);
+}
+
+
+animation enemy_animation(circle eny)
+{
+    if(enemy touches player)
+    {
+        eny.x = -100;
+        eny.y = -100;
+    }
+}
+
+
+on leftmouse_down
+{
+    next_position_x = mouse_x;
+    next_position_y = mouse_y;
+
+    x_squared = ((next_position_x - player.x) * (next_position_x - player.x));
+    y_squared = ((next_position_y - player.y) * (next_position_y - player.y));
+    distance = sqrt(x_squared + y_squared);
+    degree =  floor(acos((next_position_x - player.x) / distance));
+
+
+    move_x = (floor(((next_position_x - player.x) / distance) * 10));
+    move_y = (floor(((next_position_y - player.y) / distance) * 10));
+
+    print(move_x);
+    print(move_y);
+}
+
+
+on rightmouse_down
+{
+    if(stamina >= 15)
+    {
+        next_position_x = mouse_x;
+        next_position_y = mouse_y;
+
+        x_squared = ((next_position_x - player.x) * (next_position_x - player.x));
+        y_squared = ((next_position_y - player.y) * (next_position_y - player.y));
+        distance = sqrt(x_squared + y_squared);
+        degree =  floor(acos((next_position_x - player.x) / distance));
+
+
+        move_x = (floor(((next_position_x - player.x) / distance) * 10));
+        move_y = (floor(((next_position_y - player.y) / distance) * 10));
+
+        move_x = move_x * attack_adder;
+        move_y = move_y * attack_adder;
+
+        attack_move = 1;
+
+        attack_dist_x = player.x + (move_x * 10);
+        attack_dist_y = player.y + (move_y * 10);
+
+        print(attack_dist_x);
+        print(attack_dist_y);
+
+        stamina -= 15;
+    }
+}
