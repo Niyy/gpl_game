@@ -5,6 +5,10 @@ forward animation player_animation(circle player);
 forward animation enemy_animation(circle eny);
 
 
+int ENEMY_MOVE_ANGLE = 0;
+int ENEMY_RADIUS = 20;
+
+
 int window_height = 800;
 int window_width = 800;
 
@@ -28,12 +32,22 @@ int attack_dist_x;
 int attack_dist_y;
 
 
+// Enemy Movement variables
+int enemy_degree;
+int enemy_next_pos_x;
+int enemy_next_pos_y;
+int enemy_x;
+int enemy_y;
+int sign;
+double timer;
+
+
 // Player Stats
 double stamina = 100;
 
 
 // Gameobjects
-circle enemy(x = 100, y = 100, radius = 10, animation_block = enemy_animation);
+circle enemy(x = 300, y = 300, radius = 10, animation_block = enemy_animation);
 circle player(x = 400, y = 400, radius = 10, animation_block = player_animation);
 
 
@@ -44,6 +58,10 @@ textbox stamina_text(x = 10  , y = 780, text = "Stamina: " + stamina, size = 0.1
 initialization
 {
     stamina = 100;
+
+    enemy_next_pos_x = enemy.x;
+    enemy_next_pos_y = enemy.y;
+    timer = 0;
 }
 
 
@@ -107,6 +125,67 @@ animation enemy_animation(circle eny)
         eny.x = -100;
         eny.y = -100;
     }
+    else if(eny.x != -100 && eny.y != -100)
+    {
+        if(abs(enemy_next_pos_x - eny.x) <= 10 && abs(enemy_next_pos_x - eny.x) <= 10 && timer > 50)
+        {
+            x_squared = ((player.x - eny.x) * (player.x - eny.x));
+            y_squared = ((player.y - eny.y) * (player.y - eny.y));
+            distance = sqrt(x_squared + y_squared);
+            degree =  floor(acos((player.x - eny.x) / 4));
+
+            sign = random(4);
+
+            if(sign == 0)
+            {
+                enemy_next_pos_x = floor(cos(degree - ENEMY_MOVE_ANGLE) * ENEMY_RADIUS);
+                enemy_next_pos_y = floor(sin(degree - ENEMY_MOVE_ANGLE) * ENEMY_RADIUS);
+            }
+            else if(sign == 1)
+            {
+                enemy_next_pos_x = floor(cos(degree + ENEMY_MOVE_ANGLE) * ENEMY_RADIUS);
+                enemy_next_pos_y = floor(sin(degree + ENEMY_MOVE_ANGLE) * ENEMY_RADIUS);
+            }
+            else if(sign == 2)
+            {
+                enemy_next_pos_x = floor(cos(degree - ENEMY_MOVE_ANGLE) * ENEMY_RADIUS);
+                enemy_next_pos_y = floor(sin(degree + ENEMY_MOVE_ANGLE) * ENEMY_RADIUS);
+            }
+            else
+            {
+                enemy_next_pos_x = floor(cos(degree + ENEMY_MOVE_ANGLE) * ENEMY_RADIUS);
+                enemy_next_pos_y = floor(sin(degree - ENEMY_MOVE_ANGLE) * ENEMY_RADIUS);
+            }
+
+            // Reuse to get distance from new point
+            x_squared = ((enemy_next_pos_x - eny.x) * (enemy_next_pos_x - eny.x));
+            y_squared = ((enemy_next_pos_y - eny.y) * (enemy_next_pos_y - eny.y));
+            distance = sqrt(x_squared + y_squared);
+
+            enemy_x = (floor(((enemy_next_pos_x - eny.x) / distance) * 10));
+            enemy_y = (floor(((enemy_next_pos_y - eny.y) / distance) * 10));
+
+
+            print(enemy_next_pos_x);
+            print(enemy_next_pos_y);
+
+            timer = 0;
+        }
+        else
+        {
+            if(abs(enemy_next_pos_x - eny.x) >= 10)
+            {
+                eny.x += enemy_x;
+            }
+
+            if(abs(enemy_next_pos_y - eny.y) >= 10)
+            {
+                eny.y += enemy_y;
+            }
+
+            timer += 0.5;
+        }
+    }
 }
 
 
@@ -123,9 +202,6 @@ on leftmouse_down
 
     move_x = (floor(((next_position_x - player.x) / distance) * 10));
     move_y = (floor(((next_position_y - player.y) / distance) * 10));
-
-    print(move_x);
-    print(move_y);
 }
 
 
@@ -152,9 +228,6 @@ on rightmouse_down
 
         attack_dist_x = player.x + (move_x * 10);
         attack_dist_y = player.y + (move_y * 10);
-
-        print(attack_dist_x);
-        print(attack_dist_y);
 
         stamina -= 15;
     }
