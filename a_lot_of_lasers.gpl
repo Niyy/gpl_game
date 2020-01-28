@@ -1,0 +1,298 @@
+// Author: Austin Meyer
+
+
+forward animation player_animation(circle player);
+forward animation lasertop_animation(rectangle las);
+forward animation laserside_animation(rectangle las);
+
+
+int LAZER_COUNT = 20;
+
+
+int window_height = 800;
+int window_width = 800;
+string window_title = "A Lot of Lasers!";
+double window_red = 1.0;
+double window_blue = 1.0;
+double window_green = 1.0;
+
+int attack_adder = 2;
+int attack_move = 0;
+
+int mouse_x;
+int mouse_y;
+
+int laser_y[LAZER_COUNT];
+int laser_x[LAZER_COUNT];
+int count = 0;
+int count_side = 0;
+int timer = 100;
+int timer_side = 100;
+int master_timer = 0;
+int more_lasers = 0;
+int i;
+
+
+// Player Movement variables
+double distance;
+int next_position_y;
+int next_position_x;
+int degree;
+int x_squared;
+int y_squared;
+int move_y;
+int move_x;
+int attack_dist_x;
+int attack_dist_y;
+
+
+// Player Stats
+double stamina = 100;
+int health = 100;
+
+
+// Gameobjects
+rectangle lasertop_animator(x = -100, y = -100, animation_block = lasertop_animation);
+rectangle laserside_animator(x = -100, y = -100, animation_block = laserside_animation);
+rectangle laser[LAZER_COUNT];
+rectangle laser_side[LAZER_COUNT];
+circle player(x = 400, y = 400, radius = 10, animation_block = player_animation);
+
+
+// Game text information
+textbox health_text(x = 10, y = 780, text = "Health: " + health, size = 0.1);
+textbox current_score(x = 10, y = 760, text = "Score: " + master_timer, size = 0.1);
+textbox game_over(x = -100, y = -100);
+textbox score(x = -100, y = -100);
+
+
+initialization
+{
+    for(i = 0; i < LAZER_COUNT; i++)
+    {
+        laser[i].x = 400;
+        laser[i].y = 800;
+        laser[i].h = 800;
+        laser[i].w = 10;
+
+        laser_y[i] = 0;
+
+        laser_side[i].x = 800;
+        laser_side[i].y = 400;
+        laser_side[i].w = 800;
+        laser_side[i].h = 10;
+
+        laser_x[i] = 0;
+    }
+}
+
+
+animation player_animation(circle player)
+{
+    if(health <= 0)
+    {
+        game_over.text = "Game Over!";
+        game_over.size = 1.0;
+        game_over.blue = 1.0;
+        game_over.x = -5;
+        game_over.y = 400;
+
+
+        score.text = "Score: " + master_timer;
+        score.size = 0.8;
+        score.blue = 1.0;
+        score.x = 90;
+        score.y = 200;
+    }
+    else
+    {
+        if(attack_move)
+        {
+            if(abs(attack_dist_x - player.x) >= 4)
+            {
+                player.x += move_x;
+            }
+            else
+            {
+                attack_move++;
+            }
+        }
+        else if(abs(next_position_x - player.x) >= 5)
+        {
+            player.x += move_x;
+        }
+
+        if(attack_move)
+        {
+            if(abs(attack_dist_y - player.y) >= 5)
+            {
+                player.y += move_y;
+            }
+            else
+            {
+                attack_move++;
+            }
+        }
+        else if(abs(next_position_y - player.y) >= 5)
+        {
+            player.y += move_y;
+        }
+
+        if(attack_move >= 3)
+        {
+            attack_move = 0;
+
+            next_position_x = player.x;
+            next_position_y = player.y;
+        }
+    }
+
+    health_text.text = "Health: " + health;
+    current_score.text = "Score: " + master_timer;
+}
+
+
+animation lasertop_animation(rectangle las)
+{
+    if(timer >= 15)
+    {
+        if(laser[count].y >= 800)
+        {
+            laser[count].x = random(760);
+            laser_y[count]  = -4 - count;
+        }
+
+        count++;
+        timer = 0;
+    }
+
+    for(i = 0; i < 9 + more_lasers; i++)
+    {
+        if(laser[i].y <= 0)
+        {
+            laser_y[i] = 4 + count;
+        }
+
+        laser[i].y += laser_y[i];
+
+        if(laser[i] touches player && health >= 0)
+        {
+            health--;
+        }
+        else if(health <= 0)
+        {
+            health = 0;
+        }
+    }
+
+    timer++;
+
+    if(count >= 9 + more_lasers)
+    {
+        count = 0;
+    }
+
+    health_text.text = "Health: " + health;
+    current_score.text = "Score: " + master_timer;
+}
+
+
+animation laserside_animation(rectangle las)
+{
+    if(timer_side >= 15)
+    {
+        if(laser_side[count_side].x >= 800)
+        {
+            laser_side[count_side].y = random(760);
+            laser_x[count_side]  = -4 - count;
+        }
+
+        count_side++;
+        timer_side = 0;
+    }
+
+    for(i = 0; i < 9 + more_lasers; i++)
+    {
+        if(laser_side[i].x <= 0)
+        {
+            laser_x[i] = 4;
+        }
+
+        laser_side[i].x += laser_x[i];
+
+        if(laser_side[i] touches player && health >= 0)
+        {
+            health--;
+        }
+        else if(health <= 0)
+        {
+            health = 0;
+        }
+    }
+
+    timer_side++;
+
+    if(health > 0)
+    {
+        master_timer++;
+    }
+
+    if(count_side >= 9 + more_lasers)
+    {
+        count_side = 0;
+    }
+
+
+    if(master_timer % 300 == 0 && 9 + more_lasers < LAZER_COUNT)
+    {
+        more_lasers++;
+    }
+
+    health_text.text = "Health: " + health;
+    current_score.text = "Score: " + master_timer;
+}
+
+
+on leftmouse_down
+{
+    next_position_x = mouse_x - 10;
+    next_position_y = mouse_y - 10;
+
+    x_squared = ((next_position_x - player.x) * (next_position_x - player.x));
+    y_squared = ((next_position_y - player.y) * (next_position_y - player.y));
+    distance = sqrt(x_squared + y_squared);
+    degree =  floor(acos((next_position_x - player.x)));
+
+
+    move_x = (floor(((next_position_x - player.x) / distance) * 10));
+    move_y = (floor(((next_position_y - player.y) / distance) * 10));
+}
+
+
+on rightmouse_down
+{
+    if(stamina >= 15)
+    {
+        next_position_x = mouse_x - 5;
+        next_position_y = mouse_y - 5;
+
+        x_squared = ((next_position_x - player.x) * (next_position_x - player.x));
+        y_squared = ((next_position_y - player.y) * (next_position_y - player.y));
+        distance = sqrt(x_squared + y_squared);
+        degree =  floor(acos((next_position_x - player.x) / distance));
+
+
+        move_x = (floor(((next_position_x - player.x) / distance) * 10));
+        move_y = (floor(((next_position_y - player.y) / distance) * 10));
+
+        move_x = move_x * attack_adder;
+        move_y = move_y * attack_adder;
+
+        attack_move = 1;
+
+        attack_dist_x = player.x + (move_x * 10);
+        attack_dist_y = player.y + (move_y * 10);
+
+        stamina -= 15;
+    }
+}
